@@ -2260,7 +2260,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
 // ============================================================
 // GOOGLE SHEET FUNCTIONS
 // ============================================================
-function getSheetUrl(){return localStorage.getItem('aofSheetUrl')||'https://script.google.com/macros/s/AKfycbxsJVAIlsGuUnugTskY8EDT6wQ_bIkghTBLCd-KGc7T7NPyvvgGMZ8a8DHehNyfvrlh/exec';}
+function getSheetUrl(){return localStorage.getItem('aofSheetUrl')||'https://script.google.com/macros/s/AKfycbxeCcG-Kjv8ggmXtId3en5Ro8q2BSDXG3fNoCM8rU0U8iF9sWDkZJofEGWPmeLovN-i/exec';}
 
 function testSheetUrl(){
   const url=getSheetUrl();
@@ -2605,7 +2605,7 @@ window.onload=function(){
   // Auto-save correct script URL if not already saved
   var savedUrl=localStorage.getItem('aofSheetUrl')||'';
   if(!savedUrl){
-    localStorage.setItem('aofSheetUrl','https://script.google.com/macros/s/AKfycbxsJVAIlsGuUnugTskY8EDT6wQ_bIkghTBLCd-KGc7T7NPyvvgGMZ8a8DHehNyfvrlh/exec');
+    localStorage.setItem('aofSheetUrl','https://script.google.com/macros/s/AKfycbxeCcG-Kjv8ggmXtId3en5Ro8q2BSDXG3fNoCM8rU0U8iF9sWDkZJofEGWPmeLovN-i/exec');
   }
   // Also update sheetScriptUrl field if admin panel open
   var urlField=document.getElementById('sheetScriptUrl');
