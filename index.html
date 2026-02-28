@@ -2338,52 +2338,78 @@ function smartOCR(b64, mode, methodList, index){
 }
 
 function handleOCRResult(number, mode, source){
-  if(!number || number.length < 8){
-    return false;
-  }
-  // Clean number + apply OCR char corrections
+  if(!number || number.length < 8) return false;
+  // Clean + apply OCR char corrections
   var corrected = number.toUpperCase()
     .replace(/O/g,'0').replace(/I/g,'1').replace(/L/g,'1')
     .replace(/S/g,'5').replace(/B/g,'8').replace(/Z/g,'2').replace(/G/g,'6');
   number = corrected.replace(/[^0-9]/g,'').trim();
   if(number.length < 8) return false;
   if(number.length > 11) number = number.substring(0,11);
-  // Apply learned corrections
   number = applyLearning(number);
 
-  if(mode==='inst'){
-    showInstOcrStatus('✅ '+source+': '+number,'ok');
-  } else {
-    showOcrStatus('✅ '+source+' found: '+number,'ok');
-    document.getElementById('accountInput').value = number;
-  }
-  // Auto search — INSTANT, no delay
-  document.getElementById('accountInput').value = number;
-  // Check directly without focus (no keyboard popup)
   var q = number;
-  if(q.length===11 && /^\d{11}$/.test(q)){
-    checkDuplicate(q);
-    var found = accountsSet.has(q);
-    // Show in camera result box directly
-    var camEl = document.getElementById('camResult');
-    if(camEl){
-      camEl.className = '';
-      camEl.innerHTML = (found?'✅ FOUND':'❌ NOT FOUND') + '<div class="sub">' + q + '</div>';
-      camEl.classList.add(found?'r-found':'r-miss');
-    }
-    speakResult(found); vibrateResult(found); playSound(found);
-    addHistory(q, '📷 Camera', found); addReport('cam', found);
-    if(!found){ addNotFound(q,'📷 Camera'); showSmartSuggestion(q, camEl); }
-    updateSession(found);
-    sessCheckedCount++; if(found) sessFoundCount++;
-    var sc = document.getElementById('sessChecked'); if(sc) sc.textContent = sessCheckedCount;
-    var sf = document.getElementById('sessFound'); if(sf) sf.textContent = sessFoundCount;
-    // Also update main result and history
-    setResult(found?'✅ FOUND':'❌ NOT FOUND', found?'r-found':'r-miss', q);
-    renderHistory();
-    var arr=getHistory(),hl=document.getElementById('camHistoryList');
-    if(hl) hl.innerHTML=arr.length===0?'<div class="history-empty">No searches yet</div>':arr.slice(0,5).map(h=>'<div class="history-item"><span class="hi-num">'+h.number+'</span><span class="hi-method">'+h.method+'</span><span class="hi-time">'+h.time+'</span><span class="'+(h.found?'hi-found':'hi-miss')+'">'+(h.found?'✅':'❌')+'</span></div>').join('');
+  var found = accountsSet.has(q);
+
+  // ── STATUS LABELS ──
+  if(mode==='inst'){
+    showInstOcrStatus((found?'✅ FOUND':'❌ NOT FOUND')+' | '+source+': '+q, found?'done':'error');
+  } else {
+    showOcrStatus((found?'✅ FOUND':'❌ NOT FOUND')+' | '+source+': '+q, found?'done':'error');
   }
+
+  // ── RESULT BOX ── (no accountInput touch = no keyboard)
+  var resultId = (mode==='inst') ? 'instResult' : 'camResult';
+  var el = document.getElementById(resultId);
+  if(el){
+    el.className = '';
+    el.innerHTML = (found?'✅ FOUND':'❌ NOT FOUND')+'<div class="sub">'+q+'</div>';
+    el.classList.add(found?'r-found':'r-miss');
+    if(!found) showSmartSuggestion(q, el);
+  }
+
+  // ── FEEDBACK ──
+  speakResult(found); vibrateResult(found); playSound(found);
+
+  // ── SAVE ──
+  checkDuplicate(q);
+  var methodLabel = (mode==='inst') ? '⚡ Instant' : '📷 Camera';
+  addHistory(q, methodLabel, found);
+  addReport(mode==='inst'?'instant':'cam', found);
+  if(!found) addNotFound(q, methodLabel);
+  updateSession(found);
+
+  // ── SESSION COUNTS ──
+  sessCheckedCount++;
+  if(found) sessFoundCount++;
+  var sc=document.getElementById('sessChecked'); if(sc) sc.textContent=sessCheckedCount;
+  var sf=document.getElementById('sessFound'); if(sf) sf.textContent=sessFoundCount;
+  if(mode==='inst'){
+    instCheckedCount++; if(found) instFoundCount++;
+    var ic=document.getElementById('instChecked'); if(ic) ic.textContent=instCheckedCount;
+    var iif=document.getElementById('instFound'); if(iif) iif.textContent=instFoundCount;
+  }
+
+  // ── HISTORY LIST ──
+  renderHistory();
+  var arr=getHistory();
+  var histHtml = arr.length===0
+    ? '<div class="history-empty">No searches yet</div>'
+    : arr.slice(0,5).map(function(h){
+        return '<div class="history-item"><span class="hi-num">'+h.number+'</span>'
+          +'<span class="hi-method">'+h.method+'</span>'
+          +'<span class="hi-time">'+h.time+'</span>'
+          +'<span class="'+(h.found?'hi-found':'hi-miss')+'">'+(h.found?'✅':'❌')+'</span></div>';
+      }).join('');
+  var camHl=document.getElementById('camHistoryList'); if(camHl) camHl.innerHTML=histHtml;
+  var instHl=document.getElementById('instHistoryList'); if(instHl) instHl.innerHTML=histHtml;
+
+  // ── CACHE OCR (for instant scan dedup) ──
+  try{
+    var canvas = document.getElementById(mode==='inst'?'instCanvas':'camCanvas');
+    if(canvas){ var h=hashImage(canvas.toDataURL('image/jpeg',0.6)); setCachedOCR(h,q); }
+  }catch(e){}
+
   return true;
 }
 
@@ -2668,45 +2694,32 @@ function resetEngines(){
   ['gemini','groq','ocr','tess'].forEach(e=>setEngineStatus(e,''));
 }
 
-// INSTANT AI — Smart order: Gemini → Groq → OCR → Tesseract
+// INSTANT AI — Uses SAME engine as Camera (respects admin assignment)
 function sendToInstantAI(b64){
   resetEngines();
-  const geminiKey=localStorage.getItem('aofGeminiKey')||'';
-  const groqKey=localStorage.getItem('aofGroqKey')||'';
-  const ocrKey=localStorage.getItem('ocrApiKey')||'';
   if(!navigator.onLine){
-    // Offline — use Tesseract
     setEngineStatus('tess','active');
     document.getElementById('instBadge').textContent='📵 Offline';
-    document.getElementById('instModeLabel').textContent='AI: Offline (Tesseract)';
+    document.getElementById('instModeLabel').textContent='AI: Offline';
     showInstOcrStatus('📵 Offline scan...','scanning');
     sendToOfflineOCR(b64,'inst');
     return;
   }
-  if(geminiKey){
-    setEngineStatus('gemini','active');
-    document.getElementById('instBadge').textContent='🤖 Gemini';
-    document.getElementById('instModeLabel').textContent='AI: Gemini (Google)';
-    showInstOcrStatus('🤖 Gemini AI scanning...','scanning');
-    sendToGemini(b64,geminiKey,groqKey,ocrKey);
-  }else if(groqKey){
-    setEngineStatus('groq','active');
-    document.getElementById('instBadge').textContent='⚡ Groq';
-    document.getElementById('instModeLabel').textContent='AI: Groq';
-    showInstOcrStatus('⚡ Groq AI scanning...','scanning');
-    sendToGroq(b64,groqKey,ocrKey);
-  }else if(ocrKey){
-    setEngineStatus('ocr','active');
-    document.getElementById('instBadge').textContent='📷 OCR';
-    document.getElementById('instModeLabel').textContent='AI: OCR.space';
-    showInstOcrStatus('📷 OCR.space scanning...','scanning');
-    sendInstToOCR(b64,ocrKey);
-  }else{
-    setEngineStatus('tess','active');
-    document.getElementById('instBadge').textContent='📵 Offline';
-    showInstOcrStatus('📵 Offline scan (no API keys)...','scanning');
-    sendToOfflineOCR(b64,'inst');
-  }
+  // Use SAME method list as Camera Search — reads admin assignment
+  var methods = getDeviceOCRMethods();
+  var label = methods[0]||'auto';
+  var badgeMap = {gemini:'🤖 Gemini',groq:'⚡ Groq',ocrspace:'🌐 OCR',openrouter:'🌟 OpenRouter',tesseract:'📵 Offline'};
+  document.getElementById('instBadge').textContent = badgeMap[label]||'🔍 Auto';
+  document.getElementById('instModeLabel').textContent = 'AI: '+(label.charAt(0).toUpperCase()+label.slice(1));
+  // Update engine dots to show assigned method
+  ['gemini','groq','ocr','tess'].forEach(function(e){ setEngineStatus(e,''); });
+  if(label==='gemini') setEngineStatus('gemini','waiting');
+  else if(label==='groq') setEngineStatus('groq','waiting');
+  else if(label==='ocrspace') setEngineStatus('ocr','waiting');
+  else if(label==='tesseract') setEngineStatus('tess','waiting');
+  showInstOcrStatus('🔍 Scanning with '+label+'...','scanning');
+  // Route through smartOCR — identical to Camera Search
+  smartOCR(b64, 'inst', methods, 0);
 }
 
 function sendToGemini(b64,geminiKey,groqKey,ocrKey){
@@ -3473,22 +3486,26 @@ function robustFetch(url, cacheKey, maxRetries, onSuccess, onFail){
 // ============================================================
 function processOCRText(text, mode){
   if(!text||text==='NONE')return;
-  // Apply OCR corrections
   var corrected = text.toUpperCase()
     .replace(/O/g,'0').replace(/I/g,'1').replace(/L/g,'1')
     .replace(/S/g,'5').replace(/B/g,'8').replace(/Z/g,'2').replace(/G/g,'6');
   var matches=(corrected.match(/\d{11}/g)||[]);
-  // Deduplicate
   var unique=[...new Set(matches)];
-  // Apply learning to each
   unique=unique.map(function(n){return applyLearning(n);});
   if(unique.length===0){
-    showInstOcrStatus('⚠️ No 11-digit number found','error');
-    document.getElementById('instResult').innerHTML='⚠️ No number found<div class="sub">Adjust position and wait for next scan</div>';
-    document.getElementById('instResult').className='';
+    if(mode==='inst'){
+      showInstOcrStatus('⚠️ No 11-digit number found','error');
+      var ir=document.getElementById('instResult');
+      if(ir){ir.innerHTML='⚠️ No number found<div class="sub">Adjust position and wait</div>';ir.className='';}
+    } else {
+      showOcrStatus('⚠️ No 11-digit number found','error');
+      var cr=document.getElementById('camResult');
+      if(cr){cr.innerHTML='⚠️ No number found<div class="sub">Try again</div>';cr.className='';}
+    }
     return;
   }
-  processInstantResult(unique);
+  // Route through unified handler
+  handleOCRResult(unique[0], mode||'inst', 'AI');
 }
 
 window.onload=function(){
@@ -3531,4 +3548,3 @@ window.onload=function(){
 </script>
 </body>
 </html>
-
