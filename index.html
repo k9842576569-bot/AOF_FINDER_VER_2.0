@@ -1614,11 +1614,14 @@ function checkPin(){
           showPinScreen(false);showActivationScreen('locked');
         }else if(data.status==='blocked'){
           showPinScreen(false);showActivationScreen('blocked');
+        }else if(data.error){
+          setPinError('❌ Server error: '+data.error+' ('+data.code+')');
         }else{
           showPinScreen(false);showActivationScreen('pending');
         }
       }catch(e){
         setPinError('❌ Error: '+xhr.responseText.slice(0,80));
+        console.error('Register response:', xhr.responseText);
       }
     };
     xhr.ontimeout=function(){setPinError('⏱ Timeout! Try again.');};
@@ -3130,7 +3133,7 @@ function clearAllDevices(){
 function registerDevice(devId,url){
   const ua=navigator.userAgent;
   const name=ua.includes('iPhone')?'iPhone':ua.includes('Samsung')?'Samsung':ua.includes('Redmi')?'Redmi':ua.includes('Android')?'Android':'PC/Desktop';
-  fetch(url+'?action=register&deviceId='+encodeURIComponent(devId)+'&deviceName='+encodeURIComponent(name)+'&time='+encodeURIComponent(new Date().toLocaleString('en-IN'))).catch(()=>{});
+  fetch(url+'?action=register&key=F4XN%25iRfEXLhMrCiqIQeUT5AbW5t55Jm&deviceId='+encodeURIComponent(devId)+'&deviceName='+encodeURIComponent(name)+'&time='+encodeURIComponent(new Date().toLocaleString('en-IN'))).catch(()=>{});
 }
 
 
