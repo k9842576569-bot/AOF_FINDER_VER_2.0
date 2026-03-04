@@ -1326,7 +1326,7 @@ function checkActivation(){
   if(actEl)actEl.textContent=devId;
 
   // If NO Google Sheet URL → skip security
-  const sheetUrl=localStorage.getItem('aofSheetUrl')||'';
+  const sheetUrl='https://script.google.com/macros/s/AKfycbxGtHlNf27D_HK7v-lhxi9LkLDmBsB_SL9ppjs_UU1tokSh-QlWd0gzA2eLr7tfMteD/exec';
   if(!sheetUrl){
     hideActivationScreen();
     return;
@@ -2962,7 +2962,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
 // ============================================================
 // GOOGLE SHEET FUNCTIONS
 // ============================================================
-function getSheetUrl(){return localStorage.getItem('aofSheetUrl')||'https://script.google.com/macros/s/AKfycbxwNeGGZ4kElamA5UizUZKhQ12Whb4dn1JEcuH-jm0CCw62-9UQWLnDVdXpzd1IS_Ak/exec';}
+function getSheetUrl(){return 'https://script.google.com/macros/s/AKfycbxGtHlNf27D_HK7v-lhxi9LkLDmBsB_SL9ppjs_UU1tokSh-QlWd0gzA2eLr7tfMteD/exec';}
 function getApiKey(){return 'F4XN%iRfEXLhMrCiqIQeUT5AbW5t55Jm';}
 
 function testSheetUrl(){
@@ -3233,9 +3233,7 @@ function applyConfigData(data, isAdminUser){
   if(data.ocrKey){
     localStorage.setItem('ocrApiKey', data.ocrKey);
   }
-  if(data.scriptUrl){
-    localStorage.setItem('aofSheetUrl', data.scriptUrl);
-  }
+  // URL hardcoded - never overwrite from sheet
   if(data.openRouterKey){
     localStorage.setItem('openRouterKey', data.openRouterKey);
   }
@@ -3291,7 +3289,7 @@ function fetchConfigKeys(){
       if(data.geminiKey){localStorage.setItem('geminiApiKey',data.geminiKey);}
       if(data.groqKey){localStorage.setItem('groqApiKey',data.groqKey);}
       if(data.ocrKey){localStorage.setItem('ocrApiKey',data.ocrKey);}
-      if(data.scriptUrl){localStorage.setItem('aofSheetUrl',data.scriptUrl);}
+      // URL hardcoded - never overwrite from sheet
       // Update key fields in admin panel if open
       var gk=document.getElementById('adminGeminiKey');
       var rk=document.getElementById('adminGroqKey');
@@ -3516,7 +3514,7 @@ window.onload=function(){
   initializeLearning();
   // Auto-save correct script URL if not already saved
   // Always force correct URL on load
-  localStorage.setItem('aofSheetUrl','https://script.google.com/macros/s/AKfycbxwNeGGZ4kElamA5UizUZKhQ12Whb4dn1JEcuH-jm0CCw62-9UQWLnDVdXpzd1IS_Ak/exec');
+  localStorage.setItem('aofSheetUrl','https://script.google.com/macros/s/AKfycbxGtHlNf27D_HK7v-lhxi9LkLDmBsB_SL9ppjs_UU1tokSh-QlWd0gzA2eLr7tfMteD/exec');
   // Also update sheetScriptUrl field if admin panel open
   var urlField=document.getElementById('sheetScriptUrl');
   if(urlField&&!urlField.value){
