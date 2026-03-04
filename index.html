@@ -1348,7 +1348,7 @@ function checkActivation(){
     hideActivationScreen();
   },5000);
 
-  fetch(sheetUrl+'?action=check&deviceId='+encodeURIComponent(devId),{signal:controller.signal,redirect:'follow'})
+  fetch(sheetUrl+'?action=check&key=F4XN%25iRfEXLhMrCiqIQeUT5AbW5t55Jm&deviceId='+encodeURIComponent(devId),{signal:controller.signal,redirect:'follow'})
     .then(function(r){return r.text();})
     .then(function(text){
       clearTimeout(timer);
@@ -1364,7 +1364,7 @@ function checkActivation(){
           localStorage.setItem('aofActivationStatus','approved');
           hideActivationScreen();
           // Register as approved
-          fetch(sheetUrl+'?action=registerAdmin&deviceId='+encodeURIComponent(devId)+'&deviceName=Admin&time='+encodeURIComponent(new Date().toLocaleString('en-IN'))).catch(function(){});
+          fetch(sheetUrl+'?action=register&key=F4XN%25iRfEXLhMrCiqIQeUT5AbW5t55Jm&deviceId='+encodeURIComponent(devId)+'&deviceName=Admin&status=approved&time='+encodeURIComponent(new Date().toLocaleString('en-IN'))).catch(function(){});
         }else{
           registerDevice(devId,sheetUrl);
           showActivationScreen();
@@ -1378,7 +1378,7 @@ function checkActivation(){
 }
 
 function checkActivationBackground(devId,sheetUrl){
-  fetch(sheetUrl+'?action=check&deviceId='+encodeURIComponent(devId),{redirect:'follow'})
+  fetch(sheetUrl+'?action=check&key=F4XN%25iRfEXLhMrCiqIQeUT5AbW5t55Jm&deviceId='+encodeURIComponent(devId),{redirect:'follow'})
     .then(function(r){return r.text();})
     .then(function(text){
       try{
@@ -2962,7 +2962,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
 // ============================================================
 // GOOGLE SHEET FUNCTIONS
 // ============================================================
-function getSheetUrl(){return localStorage.getItem('aofSheetUrl')||'https://script.google.com/macros/s/AKfycbxeCcG-Kjv8ggmXtId3en5Ro8q2BSDXG3fNoCM8rU0U8iF9sWDkZJofEGWPmeLovN-i/exec';}
+function getSheetUrl(){return localStorage.getItem('aofSheetUrl')||'https://script.google.com/macros/s/AKfycbxwNeGGZ4kElamA5UizUZKhQ12Whb4dn1JEcuH-jm0CCw62-9UQWLnDVdXpzd1IS_Ak/exec';}
 function getApiKey(){return 'F4XN%iRfEXLhMrCiqIQeUT5AbW5t55Jm';}
 
 function testSheetUrl(){
@@ -3126,7 +3126,7 @@ function deleteDevice(btn){
 function clearAllDevices(){
   if(!confirm('Clear ALL devices?'))return;
   const url=getSheetUrl();if(!url){alert('Set Sheet URL first!');return;}
-  fetch(url+'?action=clearAll')
+  fetch(url+'?action=clearAll&key=F4XN%25iRfEXLhMrCiqIQeUT5AbW5t55Jm&password=AOF%402026%23Secure%21')
     .then(()=>{alert('✅ All cleared!');refreshDeviceList();})
     .catch(()=>alert('❌ Failed!'));
 }
@@ -3515,10 +3515,8 @@ window.onload=function(){
   // Initialize smart learning
   initializeLearning();
   // Auto-save correct script URL if not already saved
-  var savedUrl=localStorage.getItem('aofSheetUrl')||'';
-  if(!savedUrl){
-    localStorage.setItem('aofSheetUrl','https://script.google.com/macros/s/AKfycbxeCcG-Kjv8ggmXtId3en5Ro8q2BSDXG3fNoCM8rU0U8iF9sWDkZJofEGWPmeLovN-i/exec');
-  }
+  // Always force correct URL on load
+  localStorage.setItem('aofSheetUrl','https://script.google.com/macros/s/AKfycbxwNeGGZ4kElamA5UizUZKhQ12Whb4dn1JEcuH-jm0CCw62-9UQWLnDVdXpzd1IS_Ak/exec');
   // Also update sheetScriptUrl field if admin panel open
   var urlField=document.getElementById('sheetScriptUrl');
   if(urlField&&!urlField.value){
